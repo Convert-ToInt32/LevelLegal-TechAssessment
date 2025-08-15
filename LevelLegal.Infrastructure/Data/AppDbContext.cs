@@ -1,21 +1,27 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using LevelLegal.Domain.Entities;
 
-namespace LevelLegal.Infrastructure.Data;
-
-public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
+namespace LevelLegal.Infrastructure.Data
 {
-    public DbSet<Matter> Matters { get; set; } = null!;
-    public DbSet<Evidence> Evidence { get; set; } = null!;
-
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    public class AppDbContext : DbContext
     {
-        base.OnModelCreating(modelBuilder);
+        public AppDbContext(DbContextOptions<AppDbContext> options)
+            : base(options)
+        {
+        }
 
-        modelBuilder.Entity<Matter>()
-            .HasMany(m => m.EvidenceItems)
-            .WithOne(e => e.Matter)
-            .HasForeignKey(e => e.MatterId)
-            .OnDelete(DeleteBehavior.Cascade);
+        public DbSet<Matter> Matters { get; set; } = null!;
+        public DbSet<Evidence> Evidence { get; set; } = null!;
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+
+            modelBuilder.Entity<Matter>()
+                .HasMany(m => m.EvidenceItems)
+                .WithOne(e => e.Matter)
+                .HasForeignKey(e => e.MatterId)
+                .OnDelete(DeleteBehavior.Cascade);
+        }
     }
 }
