@@ -21,10 +21,23 @@ namespace LevelLegal.Infrastructure.Repository
             await _context.Database.CloseConnectionAsync();
         }
 
-
         public async Task<bool> ExistsAsync(int evidenceId)
         {
             return await _context.Evidence.AnyAsync(e => e.Id == evidenceId);
+        }
+
+        public async Task<List<Evidence>> GetAllAsync()
+        {
+            return await _context.Evidence
+                .Include(e => e.Matter) 
+                .ToListAsync();
+        }
+
+        public async Task<Evidence?> GetByIdAsync(int id)
+        {
+            return await _context.Evidence
+                .Include(e => e.Matter)
+                .FirstOrDefaultAsync(e => e.Id == id);
         }
     }
 }

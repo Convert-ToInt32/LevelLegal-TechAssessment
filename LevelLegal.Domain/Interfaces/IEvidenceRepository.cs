@@ -6,5 +6,7 @@ namespace LevelLegal.Domain.Interfaces
     {
         Task AddAsync(Evidence evidence);
         Task<bool> ExistsAsync(int evidenceId);
+        Task<List<Evidence>> GetAllAsync();
+        Task<Evidence?> GetByIdAsync(int id);
     }
 }

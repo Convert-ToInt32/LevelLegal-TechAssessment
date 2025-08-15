@@ -20,11 +20,15 @@ builder.Services.AddScoped<ICsvImporter>(sp =>
 {
     var matterRepo = sp.GetRequiredService<IMatterRepository>();
     var evidenceRepo = sp.GetRequiredService<IEvidenceRepository>();
-    return new ImportCsvCommandHandler(matterRepo, evidenceRepo);
+    var logger = sp.GetRequiredService<ILogger<ImportCsvCommandHandler>>();
+    return new ImportCsvCommandHandler(matterRepo, evidenceRepo, logger);
 });
 
 builder.Services.AddScoped<IMatterRepository, MatterRepository>();
 builder.Services.AddScoped<IEvidenceRepository, EvidenceRepository>();
+
+builder.Services.AddMediatR(cfg =>
+    cfg.RegisterServicesFromAssembly(typeof(GetAllEvidenceQueryHandler).Assembly));
 
 
 var app = builder.Build();

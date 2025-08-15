@@ -1,6 +1,7 @@
 ﻿using CsvHelper;
 using LevelLegal.Domain.Entities;
 using LevelLegal.Domain.Interfaces;
+using Microsoft.Extensions.Logging;
 using System.Globalization;
 using static LevelLegal.Application.CommandHandler.ImportCsvCommandHandler;
 
@@ -8,11 +9,13 @@ namespace LevelLegal.Application.CommandHandler
 {
     public class ImportCsvCommandHandler(
         IMatterRepository matterRepo,
-        IEvidenceRepository evidenceRepo
-    ): ICsvImporter
+        IEvidenceRepository evidenceRepo,
+        ILogger<ImportCsvCommandHandler> logger
+    ) : ICsvImporter
     {
         private readonly IMatterRepository _matterRepo = matterRepo;
         private readonly IEvidenceRepository _evidenceRepo = evidenceRepo;
+        private readonly ILogger<ImportCsvCommandHandler> _logger = logger;
 
         public interface ICsvImporter
         {
@@ -21,12 +24,16 @@ namespace LevelLegal.Application.CommandHandler
 
         public async Task<(bool Success, string? ErrorMessage)> ImportAsync(string mattersCsv, string evidenceCsv)
         {
+            _logger.LogInformation("Starting CSV import for Matters and Evidence.");
+
             try
             {
                 // --- Import Matters ---
                 using var reader1 = new StringReader(mattersCsv);
                 using var csv1 = new CsvReader(reader1, CultureInfo.InvariantCulture);
                 var matterRecords = csv1.GetRecords<MatterCsvModel>()?.ToList() ?? [];
+
+                _logger.LogInformation("Found {Count} matter records in CSV.", matterRecords.Count);
 
                 foreach (var record in matterRecords)
                 {
@@ -37,6 +44,11 @@ namespace LevelLegal.Application.CommandHandler
                             Id = record.MatterID,
                             Name = record.MatterName
                         });
+                        _logger.LogDebug("Inserted Matter {Id} - {Name}", record.MatterID, record.MatterName);
+                    }
+                    else
+                    {
+                        _logger.LogDebug("Skipped existing Matter {Id}", record.MatterID);
                     }
                 }
 
@@ -44,6 +56,8 @@ namespace LevelLegal.Application.CommandHandler
                 using var reader2 = new StringReader(evidenceCsv);
                 using var csv2 = new CsvReader(reader2, CultureInfo.InvariantCulture);
                 var evidenceRecords = csv2.GetRecords<EvidenceCsvModel>()?.ToList() ?? [];
+
+                _logger.LogInformation("Found {Count} evidence records in CSV.", evidenceRecords.Count);
 
                 foreach (var record in evidenceRecords)
                 {
@@ -56,21 +70,25 @@ namespace LevelLegal.Application.CommandHandler
                             Description = record.Description,
                             MatterId = record.MatterID
                         });
+                        _logger.LogDebug("Inserted Evidence {Id} for Matter {MatterId}", record.EvidenceID, record.MatterID);
+                    }
+                    else
+                    {
+                        _logger.LogDebug("Skipped existing Evidence {Id}", record.EvidenceID);
                     }
                 }
 
+                _logger.LogInformation("CSV import completed successfully.");
                 return (true, null);
             }
             catch (HeaderValidationException ex)
             {
-                // Special handling for CSV header issues
-                Console.WriteLine($"CSV Header Error: {ex.Message}");
+                _logger.LogWarning(ex, "CSV Header Error during import.");
                 return (false, $"CSV Header Error: {ex.Message}");
             }
             catch (Exception ex)
             {
-                // General catch
-                Console.WriteLine($"Error importing CSV: {ex}");
+                _logger.LogError(ex, "Error importing CSV.");
                 return (false, $"Error importing CSV: {ex.Message}");
             }
         }
