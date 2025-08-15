@@ -8,7 +8,7 @@ namespace LevelLegal.Domain.Entities
 
         [Required]
         [MaxLength(200)]
-        public required string Name { get; set; }
+        public string? Name { get; set; }
 
         public ICollection<Evidence> EvidenceItems { get; set; } = [];
     }

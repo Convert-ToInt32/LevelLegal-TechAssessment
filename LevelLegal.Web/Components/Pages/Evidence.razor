@@ -1,26 +1,76 @@
 ﻿@page "/evidence"
+@using LevelLegal.Application.CommandHandler
+@inject ImportCsvCommandHandler.ICsvImporter CsvImporter
+@using Microsoft.AspNetCore.Components.Forms
+@rendermode InteractiveServer
 
-<h3>Evidence List</h3>
-<p>This page will later display the list of evidence from the database.</p>
+<p>Upload Matters and Evidence CSVs:</p>
+<InputFile OnChange="HandleFiles" multiple accept=".csv" />
 
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>Evidence Name</th>
-            <th>Description</th>
-            <th>Matter</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-            <td>Sample Evidence 1</td>
-            <td>Sample description</td>
-            <td>Sample Matter</td>
-        </tr>
-        <tr>
-            <td>Sample Evidence 2</td>
-            <td>Another description</td>
-            <td>Another Matter</td>
-        </tr>
-    </tbody>
-</table>
+<button @onclick="ImportCsvs" class="btn btn-primary mt-2">Import CSVs</button>
+
+@if (!string.IsNullOrEmpty(message))
+{
+    <div class="alert alert-info">@message</div>
+}
+
+@code {
+    private string? message;
+    private string? mattersCsv;
+    private string? evidenceCsv;
+
+    private async Task HandleFiles(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            var files = e.GetMultipleFiles();
+
+            if (files.Count < 2)
+            {
+                message = "Please select two files.";
+                return;
+            }
+
+            // Detect which file is Matters and which is Evidence
+            foreach (var file in files)
+            {
+                using var reader = new StreamReader(file.OpenReadStream());
+                var content = await reader.ReadToEndAsync();
+
+                if (file.Name.Contains("Matter", StringComparison.OrdinalIgnoreCase))
+                    mattersCsv = content;
+                else if (file.Name.Contains("Evidence", StringComparison.OrdinalIgnoreCase))
+                    evidenceCsv = content;
+            }
+
+            message = "Files loaded successfully. Ready to import.";
+        }
+        catch (Exception ex)
+        {
+            message = $"Error reading files: {ex.Message}";
+        }
+    }
+
+    private async Task ImportCsvs()
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(mattersCsv) || string.IsNullOrEmpty(evidenceCsv))
+            {
+                message = "Please upload both Matters and Evidence CSV files.";
+                return;
+            }
+
+            var (success, errorMessage) = await CsvImporter.ImportAsync(mattersCsv, evidenceCsv);
+
+            if (success)
+                message = "✅ CSV imported successfully!";
+            else
+                message = $"❌ Failed to import CSVs: {errorMessage}";
+        }
+        catch (Exception ex)
+        {
+            message = $"Import error: {ex.Message}";
+        }
+    }
+}

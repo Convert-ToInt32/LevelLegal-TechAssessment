@@ -6,4 +6,14 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="CsvHelper" Version="33.1.0" />
+    <PackageReference Include="MediatR" Version="13.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\LevelLegal.Domain\LevelLegal.Domain.csproj" />
+    <ProjectReference Include="..\LevelLegal.Infrastructure\LevelLegal.Infrastructure.csproj" />
+  </ItemGroup>
+
 </Project>

@@ -16,6 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\LevelLegal.Application\LevelLegal.Application.csproj" />
     <ProjectReference Include="..\LevelLegal.Infrastructure\LevelLegal.Infrastructure.csproj" />
   </ItemGroup>
 
