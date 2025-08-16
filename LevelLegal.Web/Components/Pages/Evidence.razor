@@ -1,23 +1,80 @@
 ﻿@page "/evidence"
 @using LevelLegal.Application.CommandHandler
+@using LevelLegal.Application.Query
+@using LevelLegal.Application.DTOs
+@using MediatR
 @inject ImportCsvCommandHandler.ICsvImporter CsvImporter
+@inject IMediator Mediator
 @using Microsoft.AspNetCore.Components.Forms
 @rendermode InteractiveServer
 
+<h3>Evidence Management</h3>
+
+<!-- Upload Section -->
 <p>Upload Matters and Evidence CSVs:</p>
 <InputFile OnChange="HandleFiles" multiple accept=".csv" />
-
 <button @onclick="ImportCsvs" class="btn btn-primary mt-2">Import CSVs</button>
 
 @if (!string.IsNullOrEmpty(message))
 {
-    <div class="alert alert-info">@message</div>
+    <div class="alert alert-info mt-2">@message</div>
+}
+
+<!-- Evidence List Section -->
+<h4 class="mt-4">Evidence List</h4>
+<button @onclick="LoadEvidence" class="btn btn-secondary mb-2">Load Evidence</button>
+
+@if (evidenceList.Any())
+{
+    <!-- Matter Filter -->
+    <div class="mb-3">
+        <label>Select Matter: </label>
+        <select class="form-select w-auto d-inline ms-2" @onchange="OnMatterFilterChanged">
+            <option value="">All Matters</option>
+            @foreach (var m in matterNames)
+            {
+                <option value="@m" selected="@(m == selectedMatter)">@m</option>
+            }
+        </select>
+    </div>
+
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Evidence Name</th>
+                <th>Description</th>
+                <th>Serial Number</th>
+                <th>Matter Name</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var ev in filteredEvidence)
+            {
+                <tr>
+                    <td>@ev.EvidenceName</td>
+                    <td>@ev.Description</td>
+                    <td>@ev.SerialNumber</td>
+                    <td>@ev.MatterName</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+}
+else if (evidenceList != null)
+{
+    <p>No evidence loaded. Click "Load Evidence" to fetch data.</p>
 }
 
 @code {
     private string? message;
     private string? mattersCsv;
     private string? evidenceCsv;
+
+    private List<EvidenceDto> evidenceList = new();
+    private List<EvidenceDto> filteredEvidence = new();
+    private List<string> matterNames = new();
+    private string? selectedMatter;
 
     private async Task HandleFiles(InputFileChangeEventArgs e)
     {
@@ -31,7 +88,6 @@
                 return;
             }
 
-            // Detect which file is Matters and which is Evidence
             foreach (var file in files)
             {
                 using var reader = new StreamReader(file.OpenReadStream());
@@ -64,13 +120,59 @@
             var (success, errorMessage) = await CsvImporter.ImportAsync(mattersCsv, evidenceCsv);
 
             if (success)
+            {
                 message = "✅ CSV imported successfully!";
+                // Do NOT auto-load evidence here; user must click "Load Evidence"
+            }
             else
+            {
                 message = $"❌ Failed to import CSVs: {errorMessage}";
+            }
         }
         catch (Exception ex)
         {
             message = $"Import error: {ex.Message}";
         }
+    }
+
+    private async Task LoadEvidence()
+    {
+        try
+        {
+            var result = await Mediator.Send(new GetAllEvidenceQuery());
+            evidenceList = result ?? new List<EvidenceDto>();
+
+            // Collect matter names for filter
+            matterNames = evidenceList
+                .Select(e => e.MatterName ?? "No Matter")
+                .Distinct()
+                .OrderBy(m => m)
+                .ToList();
+
+            ApplyFilter();
+        }
+        catch (Exception ex)
+        {
+            message = $"Error loading evidence: {ex.Message}";
+            evidenceList = new List<EvidenceDto>();
+            filteredEvidence = new List<EvidenceDto>();
+            matterNames = new List<string>();
+        }
+    }
+
+    private void OnMatterFilterChanged(ChangeEventArgs e)
+    {
+        selectedMatter = e.Value?.ToString();
+        ApplyFilter();
+    }
+
+    private void ApplyFilter()
+    {
+        if (string.IsNullOrEmpty(selectedMatter))
+            filteredEvidence = new List<EvidenceDto>(evidenceList);
+        else
+            filteredEvidence = evidenceList
+                .Where(ev => ev.MatterName == selectedMatter)
+                .ToList();
     }
 }

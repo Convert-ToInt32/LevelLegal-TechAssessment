@@ -10,7 +10,8 @@ namespace LevelLegal.Application.DTOs
     {
         public int Id { get; set; }
         public string? EvidenceName { get; set; }
+        public string? Description { get; set; }    
+        public string? SerialNumber { get; set; }    
         public string? MatterName { get; set; }
     }
-
 }

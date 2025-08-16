@@ -32,6 +32,8 @@ public class GetAllEvidenceQueryHandler
             {
                 Id = e.Id,
                 EvidenceName = e.EvidenceName,
+                Description = e.Description,
+                SerialNumber = e.SerialNumber,
                 MatterName = e.Matter != null ? e.Matter.Name : "No Matter"
             }).ToList();
 

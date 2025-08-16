@@ -43,6 +43,7 @@ namespace LevelLegal.Application.CommandHandler
                         {
                             Id = record.MatterID,
                             Name = record.MatterName
+
                         });
                         _logger.LogDebug("Inserted Matter {Id} - {Name}", record.MatterID, record.MatterName);
                     }
@@ -68,7 +69,8 @@ namespace LevelLegal.Application.CommandHandler
                             Id = record.EvidenceID,
                             EvidenceName = $"Serial: {record.SerialNumber}",
                             Description = record.Description,
-                            MatterId = record.MatterID
+                            MatterId = record.MatterID,
+                            SerialNumber = record.SerialNumber
                         });
                         _logger.LogDebug("Inserted Evidence {Id} for Matter {MatterId}", record.EvidenceID, record.MatterID);
                     }
